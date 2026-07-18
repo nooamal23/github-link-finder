@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { UserPlus, X, Pencil, Trash2, Archive } from "lucide-react";
+import { UserPlus, Pencil, Trash2, Archive } from "lucide-react";
 import { formatArabicDate } from "@/lib/utils";
 import { confirmToast } from "@/lib/confirm-toast";
 import { useLiveSearch } from "@/lib/use-live-search";
@@ -145,131 +145,11 @@ export function PeopleAdmin({ role }: { role: Role }) {
       )}
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-foreground/40 px-3 py-4 sm:items-center sm:px-4 sm:py-8">
-          <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-card p-4 shadow-elevated sm:p-6">
-            <div className="flex items-center justify-between gap-2">
-              <h2 className="min-w-0 truncate font-display text-lg font-bold">
-                {editing ? `تعديل ${singular}` : `إضافة ${singular} جديد`}
-              </h2>
-              <button onClick={() => setOpen(false)} className="shrink-0 rounded-md p-1 hover:bg-secondary">
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <form onSubmit={submit} className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2">
-              <Field className="sm:col-span-2" label="الاسم الكامل" value={form.fullName} onChange={(v) => setForm({ ...form, fullName: v })} required />
-              <Field label="المعرف (اسم المستخدم)" value={form.username} onChange={(v) => setForm({ ...form, username: v })} required />
-              <Field label="تاريخ الولادة" type="date" value={form.birthDate} onChange={(v) => setForm({ ...form, birthDate: v })} required />
-              <div className="min-w-0">
-                <label className="mb-1.5 block text-sm font-semibold">رقم الهاتف</label>
-                <input
-                  type="tel"
-                  value={form.phone}
-                  required
-                  placeholder="مثال: 20 123 456"
-                  onChange={(e) => { setForm({ ...form, phone: e.target.value }); if (phoneError) setPhoneError(null); }}
-                  className={`block w-full max-w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 ${phoneError ? "border-destructive focus:ring-destructive/30" : "border-input focus:border-ring focus:ring-ring/30"}`}
-                />
-                {phoneError && <p className="mt-1.5 text-xs font-medium text-destructive">{phoneError}</p>}
-              </div>
-
-              {role === "student" ? (
-                <div className="min-w-0">
-                  <label className="mb-1.5 block text-sm font-semibold">كلمة العبور</label>
-                  <input
-                    type="text"
-                    value={form.birthDate}
-                    readOnly
-                    disabled
-                    placeholder="YYYY-MM-DD"
-                    className="block w-full max-w-full cursor-not-allowed rounded-lg border border-input bg-muted px-3 py-2.5 text-sm text-muted-foreground"
-                  />
-                  <p className="mt-1.5 text-[11px] text-muted-foreground">
-                    كلمة العبور تُطابق دوماً تاريخ الولادة.
-                  </p>
-                </div>
-              ) : (
-                <Field
-                  label="كلمة العبور (افتراضيا: تاريخ الولادة)"
-                  value={form.passwordOverride}
-                  onChange={(v) => setForm({ ...form, passwordOverride: v })}
-                  placeholder={form.birthDate || "YYYY-MM-DD"}
-                />
-              )}
-              <div className="min-w-0 sm:col-span-2">
-                <label className="mb-1.5 block text-sm font-semibold">الصورة الشخصية (اختياري)</label>
-                <div className="flex flex-wrap items-center gap-3">
-                  {form.photoUrl ? (
-                    <img src={form.photoUrl} alt="preview" className="h-16 w-16 shrink-0 rounded-full object-cover ring-2 ring-primary/20" />
-                  ) : (
-                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs text-muted-foreground ring-2 ring-primary/20">
-                      لا صورة
-                    </div>
-                  )}
-                  <div className="flex min-w-0 flex-1 flex-col gap-2">
-                    <label className="inline-flex w-fit cursor-pointer items-center gap-2 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90">
-                      <span>اختر صورتك</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="sr-only"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          const reader = new FileReader();
-                          reader.onload = () => {
-                            setForm((f) => ({ ...f, photoUrl: String(reader.result) }));
-                            toast.success("تم اختيار الصورة");
-                          };
-                          reader.readAsDataURL(file);
-                        }}
-                      />
-                    </label>
-                    <div className="text-xs text-muted-foreground">
-                      {form.photoUrl ? "تم اختيار صورة" : "لا يوجد لك صورة"}
-                    </div>
-                    {form.photoUrl && (
-                      <button
-                        type="button"
-                        onClick={() => setForm({ ...form, photoUrl: "" })}
-                        className="self-start rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground hover:bg-secondary"
-                      >
-                        إزالة الصورة
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="min-w-0 sm:col-span-2">
-                <label className="mb-1.5 block text-sm font-semibold">
-                  الدورات (اختياري) — يمكن اختيار أكثر من دورة
-                </label>
-                <div className="grid max-h-40 grid-cols-[minmax(0,1fr)] gap-1.5 overflow-y-auto rounded-lg border border-input bg-background p-2 sm:grid-cols-2">
-                  {courses.map((c) => (
-                    <label key={c.id} className="flex min-w-0 items-center gap-2 rounded-md px-2 py-1 text-sm hover:bg-secondary">
-                      <input
-                        type="checkbox"
-                        checked={form.courseIds.includes(c.id)}
-                        onChange={() => toggleCourse(c.id)}
-                        className="h-4 w-4 shrink-0"
-                      />
-                      <span className="min-w-0 flex-1 truncate">{c.title}</span>
-                      <span className="shrink-0 text-xs text-muted-foreground">حتى {formatArabicDate(c.endDate)}</span>
-
-                    </label>
-                  ))}
-                  {courses.length === 0 && (
-                    <div className="text-xs text-muted-foreground">لا توجد دورات بعد.</div>
-                  )}
-                </div>
-              </div>
-
-              <button type="submit" className="sm:col-span-2 mt-2 w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90">
-                {editing ? "حفظ التغييرات" : "إضافة"}
-              </button>
-            </form>
-          </div>
-        </div>
+        <PersonFormDialog
+          role={role}
+          editing={editing}
+          onClose={() => setOpen(false)}
+        />
       )}
     </div>
   );
@@ -335,32 +215,3 @@ function CoursePills({
   );
 }
 
-function Field({
-  label, value, onChange, required, className, type = "text", placeholder,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  required?: boolean;
-  className?: string;
-  type?: string;
-  placeholder?: string;
-}) {
-  return (
-    <div className={`min-w-0 ${className ?? ""}`}>
-      <label className="mb-1.5 block text-sm font-semibold">{label}</label>
-      {type === "date" ? (
-        <ArabicDateInput value={value} onChange={onChange} required={required} placeholder={placeholder} />
-      ) : (
-        <input
-          type={type}
-          value={value}
-          required={required}
-          placeholder={placeholder}
-          onChange={(e) => onChange(e.target.value)}
-          className="block w-full max-w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
-        />
-      )}
-    </div>
-  );
-}
