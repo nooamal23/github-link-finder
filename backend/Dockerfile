@@ -1,0 +1,20 @@
+FROM node:20-alpine
+WORKDIR /app
+
+# OpenSSL is required by Prisma engines on Alpine.
+RUN apk add --no-cache openssl
+
+# Install deps (postinstall runs `prisma generate` — needs the schema).
+COPY package.json ./
+COPY prisma ./prisma
+RUN npm install --omit=dev
+
+# App source
+COPY src ./src
+COPY scripts ./scripts
+
+ENV NODE_ENV=production
+ENV PORT=4000
+EXPOSE 4000
+
+CMD ["node", "src/index.js"]
