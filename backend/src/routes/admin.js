@@ -584,19 +584,16 @@ adminRouter.get("/registration-requests", async (req, res, next) => {
 const resolveSchema = z.object({ action: z.enum(["approve", "reject"]) });
 adminRouter.post("/registration-requests/:id/resolve", async (req, res, next) => {
   try {
-    const { action } = resolveSchema.parse(req.body);
-    const row = await prisma.registrationRequest.update({
-      where: { id: req.params.id },
-      data: {
-        status: action === "approve" ? "approved" : "rejected",
-        resolvedAt: new Date(),
-        resolvedById: req.user?.sub ?? null,
-      },
-      select: {
-        id: true, fullName: true, ageCategory: true, phone: true,
-        status: true, createdAt: true, resolvedAt: true, resolvedById: true,
-      },
-    });
-    res.json(row);
+    // Validate but don't act on the action — both approve and reject now
+    // hard-delete the row. Approved requests: the resulting User row is the
+    // durable record. Rejected requests: no ongoing value.
+    resolveSchema.parse(req.body);
+    try {
+      await prisma.registrationRequest.delete({ where: { id: req.params.id } });
+    } catch (err) {
+      if (err?.code === "P2025") return res.status(404).json({ error: "not_found" });
+      throw err;
+    }
+    res.json({ id: req.params.id, deleted: true });
   } catch (e) { next(e); }
 });
