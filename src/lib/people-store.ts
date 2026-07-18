@@ -311,8 +311,10 @@ export const peopleActions = {
       });
     } catch (e) {
       await toastError(`تعذّر إنشاء الحساب: ${(e as Error).message}`);
+      throw e;
+    } finally {
+      await ensurePeopleLoaded(true);
     }
-    await ensurePeopleLoaded(true);
   },
   async update(id: string, patch: Partial<Omit<Person, "id" | "role">>) {
     if (!HAS_API) {
