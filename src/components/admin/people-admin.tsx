@@ -1,13 +1,11 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { noticeToast } from "@/lib/notice-toast";
 import { UserPlus, X, Pencil, Trash2, Archive } from "lucide-react";
 import { formatArabicDate } from "@/lib/utils";
-import { ArabicDateInput } from "@/components/ui/arabic-date-input";
 import { confirmToast } from "@/lib/confirm-toast";
-import { isValidTunisianPhone, TUNISIA_PHONE_MESSAGE } from "@/lib/phone";
 import { useLiveSearch } from "@/lib/use-live-search";
 import { SearchBox, NoResults } from "@/components/ui/search-box";
+import { PersonFormDialog } from "@/components/admin/person-form-dialog";
 
 
 
@@ -15,31 +13,9 @@ import {
   usePeopleStore,
   peopleActions,
   splitCourses,
-  isUsernameTaken,
   type Person,
   type Role,
 } from "@/lib/people-store";
-
-
-type FormState = {
-  fullName: string;
-  username: string;
-  birthDate: string;
-  phone: string;
-  photoUrl: string;
-  courseIds: string[];
-  passwordOverride: string;
-};
-
-const EMPTY_FORM: FormState = {
-  fullName: "",
-  username: "",
-  birthDate: "",
-  phone: "",
-  photoUrl: "",
-  courseIds: [],
-  passwordOverride: "",
-};
 
 export function PeopleAdmin({ role }: { role: Role }) {
   const { people, courses } = usePeopleStore();
@@ -52,8 +28,6 @@ export function PeopleAdmin({ role }: { role: Role }) {
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Person | null>(null);
-  const [form, setForm] = useState<FormState>(EMPTY_FORM);
-  const [phoneError, setPhoneError] = useState<string | null>(null);
 
 
   const title = role === "instructor" ? "المعلمون" : "التلاميذ";
@@ -65,80 +39,12 @@ export function PeopleAdmin({ role }: { role: Role }) {
 
   function openAdd() {
     setEditing(null);
-    setForm(EMPTY_FORM);
     setOpen(true);
   }
 
   function openEdit(p: Person) {
     setEditing(p);
-    setForm({
-      fullName: p.fullName,
-      username: p.username,
-      birthDate: p.birthDate,
-      phone: p.phone,
-      photoUrl: p.photoUrl || "",
-      courseIds: p.courseIds,
-      passwordOverride: p.password !== p.birthDate ? p.password : "",
-    });
     setOpen(true);
-  }
-
-  function submit(e: React.FormEvent) {
-    e.preventDefault();
-    const uname = form.username.trim();
-    if (isUsernameTaken(uname, editing?.id)) {
-      noticeToast({
-        variant: "warning",
-        title: "معرّف مستخدم مكرّر",
-        message: "هذا المعرّف مستعمل بالفعل.",
-        description:
-          "يوجد شخص آخر بنفس اسم المستخدم. يرجى إضافة الاسم الثلاثي (مثلاً: ahmed.ben.salah) لضمان أن يكون المعرّف فريداً.",
-      });
-      return;
-    }
-    if (!isValidTunisianPhone(form.phone)) {
-      setPhoneError(TUNISIA_PHONE_MESSAGE);
-      noticeToast({
-        variant: "warning",
-        title: "رقم هاتف غير صحيح",
-        message: TUNISIA_PHONE_MESSAGE,
-      });
-      return;
-    }
-    setPhoneError(null);
-    const password = role === "student"
-      ? form.birthDate
-      : (form.passwordOverride || form.birthDate);
-
-    const payload = {
-      role,
-      fullName: form.fullName,
-      username: uname,
-      birthDate: form.birthDate,
-      password,
-      phone: form.phone,
-      photoUrl: form.photoUrl || undefined,
-      courseIds: form.courseIds,
-    };
-    if (editing) {
-      peopleActions.update(editing.id, payload);
-      toast.success(`تم حفظ التغييرات على ${payload.fullName} بنجاح`);
-    } else {
-      peopleActions.add(payload);
-      toast.success(`تمت إضافة ${payload.fullName} بنجاح`);
-    }
-    setOpen(false);
-  }
-
-
-
-  function toggleCourse(id: string) {
-    setForm((f) => ({
-      ...f,
-      courseIds: f.courseIds.includes(id)
-        ? f.courseIds.filter((x) => x !== id)
-        : [...f.courseIds, id],
-    }));
   }
 
   function remove(p: Person) {
