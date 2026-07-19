@@ -6,7 +6,7 @@ import morgan from "morgan";
 
 import { publicRouter } from "./routes/public.js";
 import { authRouter } from "./routes/auth.js";
-import { adminRouter } from "./routes/admin.js";
+import { adminRouter } from "./routes/admin/index.js";
 import { instructorRouter } from "./routes/instructor.js";
 import { studentRouter } from "./routes/student.js";
 import { requireAuth, requireRole } from "./middleware/auth.js";
