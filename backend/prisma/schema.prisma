@@ -39,8 +39,9 @@ enum BoardPosition {
 }
 
 enum AgeCategory {
-  child
-  adult
+  under_9
+  age_9_to_15
+  over_15
 
   @@map("age_category")
 }
