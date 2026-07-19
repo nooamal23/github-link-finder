@@ -6,6 +6,7 @@ import { isValidTunisianPhone, TUNISIA_PHONE_MESSAGE } from "@/lib/phone";
 import { noticeToast } from "@/lib/notice-toast";
 import {
   submitRegistrationRequest,
+  AGE_CATEGORY_LABEL,
   type AgeCategory,
 } from "@/lib/registration-requests";
 
@@ -74,7 +75,7 @@ function RegisterPage() {
     <>
       <PageHero
         title="طلب تسجيل جديد"
-        desc="أرسل طلبك مبدئياً عبر هذا النموذج، وستتواصل معك الإدارة قريباً لاستكمال التسجيل حضورياً بمقر الفرع."
+        desc="يرجى تعبئة البيانات التالية، وستتواصل معكم إدارة الفرع في أقرب وقت لاستكمال إجراءات التسجيل حضورياً."
       />
 
       <section className="container-page py-12">
@@ -121,26 +122,23 @@ function RegisterPage() {
                 <label className="mb-1.5 block text-sm font-semibold">
                   الفئة العمرية
                 </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {(["child", "adult"] as const).map((val) => {
-                    const label = val === "child" ? "طفل" : "كبير";
-                    const active = ageCategory === val;
-                    return (
-                      <button
-                        key={val}
-                        type="button"
-                        onClick={() => setAgeCategory(val)}
-                        className={`rounded-lg border px-4 py-2.5 text-sm font-semibold transition-colors ${
-                          active
-                            ? "border-primary bg-primary text-primary-foreground shadow-soft"
-                            : "border-border bg-background text-foreground hover:bg-secondary"
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    );
-                  })}
-                </div>
+                <select
+                  value={ageCategory}
+                  onChange={(e) =>
+                    setAgeCategory(e.target.value as AgeCategory | "")
+                  }
+                  required
+                  className="block w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
+                >
+                  <option value="" disabled>
+                    اختر الفئة العمرية
+                  </option>
+                  {(["under_9", "age_9_to_15", "over_15"] as const).map((val) => (
+                    <option key={val} value={val}>
+                      {AGE_CATEGORY_LABEL[val]}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
@@ -179,7 +177,7 @@ function RegisterPage() {
               </button>
 
               <p className="text-center text-xs leading-relaxed text-muted-foreground">
-                التسجيل النهائي يتم حضورياً بمقر الفرع بعد التواصل معك من قبل الإدارة.
+                التسجيل النهائي يتم بعد التواصل معك من قبل الإدارة.
               </p>
             </form>
           )}
