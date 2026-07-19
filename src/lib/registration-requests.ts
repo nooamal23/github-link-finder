@@ -3,7 +3,7 @@
 import { API_URL, HAS_API, apiFetch } from "./api";
 import { normalizeTunisianPhone } from "./phone";
 
-export type AgeCategory = "child" | "adult";
+export type AgeCategory = "under_9" | "age_9_to_15" | "over_15";
 export type RegistrationRequestStatus = "pending" | "approved" | "rejected";
 
 export type RegistrationRequest = {
@@ -18,8 +18,9 @@ export type RegistrationRequest = {
 };
 
 export const AGE_CATEGORY_LABEL: Record<AgeCategory, string> = {
-  child: "طفل",
-  adult: "كبير",
+  under_9: "أصغر من 9 سنوات",
+  age_9_to_15: "بين 9 سنوات و15 سنة",
+  over_15: "أكبر من 15 سنة",
 };
 
 // Public submission (no auth). Uses raw fetch to avoid attaching admin tokens.
