@@ -29,7 +29,7 @@ function rateLimit({ windowMs, max }) {
 const PHONE_REGEX = /^(\+?216)?[2345789]\d{7}$/;
 const registrationRequestSchema = z.object({
   fullName: z.string().trim().min(2).max(120),
-  ageCategory: z.enum(["child", "adult"]),
+  ageCategory: z.enum(["under_9", "age_9_to_15", "over_15"]),
   phone: z
     .string()
     .transform((s) => s.replace(/[\s\-().]/g, ""))

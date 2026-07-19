@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Check, X, RefreshCw, Phone, Calendar, Baby, User } from "lucide-react";
+import { Check, X, RefreshCw, Phone, Calendar, Users } from "lucide-react";
 import { confirmToast } from "@/lib/confirm-toast";
 import { noticeToast } from "@/lib/notice-toast";
 import { formatArabicDate } from "@/lib/utils";
@@ -108,11 +108,7 @@ function RegistrationRequestsAdmin() {
                   </h3>
                   <dl className="mt-3 space-y-1.5 text-xs text-muted-foreground">
                     <div className="flex items-center gap-2">
-                      {r.ageCategory === "child" ? (
-                        <Baby className="h-3.5 w-3.5 text-primary" />
-                      ) : (
-                        <User className="h-3.5 w-3.5 text-primary" />
-                      )}
+                      <Users className="h-3.5 w-3.5 text-primary" />
                       <span>الفئة: {AGE_CATEGORY_LABEL[r.ageCategory]}</span>
                     </div>
                     <div className="flex items-center gap-2">
