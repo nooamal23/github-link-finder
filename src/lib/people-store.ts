@@ -207,9 +207,9 @@ export async function ensurePeopleLoaded(force = false): Promise<void> {
         level: undefined,
         type: categoryToType(c.category),
         audience: categoryToAudience(c.category),
-        days: undefined,
-        timeFrom: undefined,
-        timeTo: undefined,
+        days: Array.isArray(c.days) ? (c.days as Weekday[]) : undefined,
+        timeFrom: c.timeFrom ?? undefined,
+        timeTo: c.timeTo ?? undefined,
         instructorId: c.instructorId ?? undefined,
         capacity: c.capacity,
       }));
@@ -291,13 +291,14 @@ async function toastError(msg: string) {
 }
 
 export const peopleActions = {
-  async add(person: Omit<Person, "id">) {
+  async add(person: Omit<Person, "id">): Promise<string | null> {
     if (!HAS_API) {
-      setState({ ...state, people: [...state.people, { ...person, id: crypto.randomUUID() }] });
-      return;
+      const id = crypto.randomUUID();
+      setState({ ...state, people: [...state.people, { ...person, id }] });
+      return id;
     }
     try {
-      await apiFetch("/api/admin/users", {
+      const created = await apiFetch<{ id: string }>("/api/admin/users", {
         method: "POST",
         body: JSON.stringify({
           username: person.username,
@@ -309,6 +310,7 @@ export const peopleActions = {
           photoUrl: person.photoUrl || undefined,
         }),
       });
+      return created?.id ?? null;
     } catch (e) {
       await toastError(`تعذّر إنشاء الحساب: ${(e as Error).message}`);
       throw e;
@@ -371,6 +373,9 @@ export const peopleActions = {
           instructorId: c.instructorId ?? null,
           startDate: c.startDate ?? null,
           endDate: c.endDate ?? null,
+          days: c.days ?? [],
+          timeFrom: c.timeFrom || null,
+          timeTo: c.timeTo || null,
           isPublished: true,
         }),
       });
@@ -399,6 +404,9 @@ export const peopleActions = {
       if (patch.instructorId !== undefined) body.instructorId = patch.instructorId || null;
       if (patch.startDate !== undefined) body.startDate = patch.startDate || null;
       if (patch.endDate !== undefined) body.endDate = patch.endDate || null;
+      if (patch.days !== undefined) body.days = patch.days ?? [];
+      if (patch.timeFrom !== undefined) body.timeFrom = patch.timeFrom || null;
+      if (patch.timeTo !== undefined) body.timeTo = patch.timeTo || null;
       if (patch.timeFrom !== undefined || patch.timeTo !== undefined) {
         const existing = state.courses.find((c) => c.id === id);
         const from = patch.timeFrom ?? existing?.timeFrom ?? "";
