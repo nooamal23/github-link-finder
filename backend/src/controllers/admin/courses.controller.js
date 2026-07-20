@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { prisma } from "../../db/prisma.js";
 
+const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
+
 const courseSchema = z.object({
   title: z.string().min(2),
   category: z.enum(["children", "women", "men", "training", "summer"]),
@@ -12,12 +14,16 @@ const courseSchema = z.object({
   isPublished: z.boolean().optional(),
   startDate: z.string().optional().nullable(),
   endDate: z.string().optional().nullable(),
+  days: z.array(z.number().int().min(0).max(6)).optional(),
+  timeFrom: z.string().regex(timeRegex).optional().nullable(),
+  timeTo: z.string().regex(timeRegex).optional().nullable(),
 });
 
 const courseListSelect = {
   id: true, title: true, category: true, level: true, schedule: true,
   capacity: true, instructorId: true, seasonId: true, isPublished: true,
-  startDate: true, endDate: true, createdAt: true,
+  startDate: true, endDate: true, days: true, timeFrom: true, timeTo: true,
+  createdAt: true,
   instructor: { select: { fullName: true } },
   _count: { select: { enrollments: true } },
   enrollments: { select: { studentId: true } },
@@ -36,6 +42,9 @@ function serializeCourse(c) {
     isPublished: c.isPublished,
     startDate: c.startDate ? c.startDate.toISOString().slice(0, 10) : null,
     endDate: c.endDate ? c.endDate.toISOString().slice(0, 10) : null,
+    days: c.days ?? [],
+    timeFrom: c.timeFrom ?? null,
+    timeTo: c.timeTo ?? null,
     instructorName: c.instructor?.fullName ?? null,
     enrolled: c._count?.enrollments ?? 0,
     studentIds: c.enrollments?.map(e => e.studentId) ?? [],
@@ -67,6 +76,9 @@ export async function create(req, res, next) {
         isPublished: c.isPublished ?? true,
         startDate: c.startDate ? new Date(c.startDate) : null,
         endDate: c.endDate ? new Date(c.endDate) : null,
+        days: c.days ?? [],
+        timeFrom: c.timeFrom ?? null,
+        timeTo: c.timeTo ?? null,
       },
       select: courseListSelect,
     });
@@ -80,6 +92,9 @@ export async function update(req, res, next) {
     const data = { ...patch };
     if (patch.startDate !== undefined) data.startDate = patch.startDate ? new Date(patch.startDate) : null;
     if (patch.endDate !== undefined) data.endDate = patch.endDate ? new Date(patch.endDate) : null;
+    if (patch.timeFrom !== undefined) data.timeFrom = patch.timeFrom || null;
+    if (patch.timeTo !== undefined) data.timeTo = patch.timeTo || null;
+    // days already an array; passthrough
     const course = await prisma.course.update({
       where: { id: req.params.id },
       data,
