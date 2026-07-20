@@ -101,6 +101,9 @@ model Course {
   isPublished  Boolean         @default(true) @map("is_published")
   startDate    DateTime?       @map("start_date") @db.Date
   endDate      DateTime?       @map("end_date") @db.Date
+  days         Int[]           @default([]) @map("days")
+  timeFrom     String?         @map("time_from")
+  timeTo       String?         @map("time_to")
   createdAt    DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
 
   season       Season?         @relation(fields: [seasonId], references: [id], onDelete: SetNull)
