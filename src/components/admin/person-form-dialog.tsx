@@ -123,10 +123,16 @@ export function PersonFormDialog({
     try {
       if (editing) {
         await peopleActions.update(editing.id, payload);
+        if (role === "student") {
+          await syncEnrollments(editing.id, editing.courseIds, form.courseIds);
+        }
         toast.success(`تم حفظ التغييرات على ${payload.fullName} بنجاح`);
         onClose();
       } else {
-        await peopleActions.add(payload);
+        const newId = await peopleActions.add(payload);
+        if (role === "student" && newId && form.courseIds.length > 0) {
+          await syncEnrollments(newId, [], form.courseIds);
+        }
         // onCreated may throw (e.g. request-delete failed); surface it but
         // don't prevent the dialog from closing since the person was created.
         try {
@@ -146,6 +152,21 @@ export function PersonFormDialog({
     } finally {
       setSaving(false);
     }
+  }
+
+  async function syncEnrollments(
+    studentId: string,
+    prev: string[],
+    next: string[],
+  ) {
+    const prevSet = new Set(prev);
+    const nextSet = new Set(next);
+    const toEnroll = next.filter((id) => !prevSet.has(id));
+    const toUnenroll = prev.filter((id) => !nextSet.has(id));
+    await Promise.all([
+      ...toEnroll.map((cid) => peopleActions.enroll(cid, studentId)),
+      ...toUnenroll.map((cid) => peopleActions.unenroll(cid, studentId)),
+    ]);
   }
 
   return (
