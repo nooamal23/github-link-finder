@@ -4,6 +4,23 @@ import { prisma } from "../db/prisma.js";
 
 export const instructorRouter = Router();
 
+// Ownership guard — an instructor may only touch courses they teach.
+// Admins bypass (they already pass the shared role check upstream).
+async function assertOwnsCourse(req, courseId) {
+  if (req.user.role === "admin") return true;
+  const c = await prisma.course.findUnique({
+    where: { id: courseId },
+    select: { instructorId: true },
+  });
+  if (!c || c.instructorId !== req.user.sub) {
+    const err = new Error("Forbidden");
+    err.status = 403;
+    err.publicMessage = "Forbidden";
+    throw err;
+  }
+  return true;
+}
+
 instructorRouter.get("/courses", async (req, res, next) => {
   try {
     const courses = await prisma.course.findMany({
@@ -19,6 +36,7 @@ instructorRouter.get("/courses", async (req, res, next) => {
 
 instructorRouter.get("/courses/:id/students", async (req, res, next) => {
   try {
+    await assertOwnsCourse(req, req.params.id);
     const rows = await prisma.enrollment.findMany({
       where: { courseId: req.params.id },
       include: { student: { select: { id: true, fullName: true, phone: true } } },
@@ -43,6 +61,7 @@ const attendanceSchema = z.object({
 instructorRouter.post("/attendance", async (req, res, next) => {
   try {
     const data = attendanceSchema.parse(req.body);
+    await assertOwnsCourse(req, data.courseId);
     const sessionDate = new Date(data.sessionDate);
     await prisma.$transaction(
       data.entries.map((e) =>
@@ -80,6 +99,7 @@ const evalSchema = z.object({
 instructorRouter.post("/evaluations", async (req, res, next) => {
   try {
     const e = evalSchema.parse(req.body);
+    await assertOwnsCourse(req, e.courseId);
     const created = await prisma.evaluation.create({
       data: {
         courseId: e.courseId,

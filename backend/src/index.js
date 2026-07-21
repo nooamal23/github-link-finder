@@ -10,9 +10,20 @@ import { adminRouter } from "./routes/admin/index.js";
 import { instructorRouter } from "./routes/instructor.js";
 import { studentRouter } from "./routes/student.js";
 import { requireAuth, requireRole } from "./middleware/auth.js";
+import { apiGeneralLimiter } from "./middleware/rate-limit.js";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+
+// One hop behind Nginx (see deploy/nginx.conf.example) — needed for correct
+// req.ip and X-Forwarded-For handling in express-rate-limit.
+app.set("trust proxy", 1);
+
+// Fail fast in production if JWT_SECRET wasn't set — no default fallback.
+if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
+  console.error("FATAL: JWT_SECRET is not set. Refusing to start in production.");
+  process.exit(1);
+}
 
 // --- CORS setup (strict origin list, credentials-safe) ---
 const rawOrigins = (process.env.CORS_ORIGINS || "")
@@ -53,10 +64,15 @@ app.use(
     credentials: true,
   })
 );
-app.use(express.json({ limit: "1mb" }));
+// 3mb accommodates one base64-encoded photo upload (~2MB image → ~2.7MB text).
+// Per-field size is further tightened in Zod (see users.controller.js).
+app.use(express.json({ limit: "3mb" }));
 app.use(morgan("tiny"));
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
+
+// Defense-in-depth: cap every /api/* IP to a sane total rate.
+app.use("/api", apiGeneralLimiter);
 
 // Public space — no auth
 app.use("/api/public", publicRouter);
@@ -71,10 +87,20 @@ app.use("/api/student", requireAuth, requireRole("student", "admin"), studentRou
 
 // Centralized error handler
 app.use((err, _req, res, _next) => {
+  // Always log the full error server-side.
   console.error(err);
+  // Zod validation → 400 with a safe generic message (never echo the schema).
+  if (err?.issues) {
+    return res.status(400).json({ error: "بيانات غير صالحة" });
+  }
   const status = err.status || 500;
+  if (status >= 500) {
+    // Never leak internal error text (Prisma, stack traces, etc.) to clients.
+    return res.status(500).json({ error: "Internal server error" });
+  }
+  // 4xx: only surface a message the caller has explicitly vetted as safe.
   res.status(status).json({
-    error: err.publicMessage || (status === 500 ? "Internal error" : err.message),
+    error: err.publicMessage || err.message || "Request failed",
   });
 });
 

@@ -6,7 +6,7 @@ const boardSchema = z.object({
   birthDate: z.string().optional().nullable(),
   phone: z.string().optional().nullable(),
   position: z.enum(["president", "vice_president", "secretary", "treasurer", "member"]),
-  photoUrl: z.string().optional().nullable(),
+  photoUrl: z.string().max(3_000_000, "photo too large").optional().nullable(),
   orderIndex: z.number().int().optional(),
 });
 

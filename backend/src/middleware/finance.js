@@ -1,13 +1,17 @@
 import jwt from "jsonwebtoken";
 
-const SECRET = process.env.JWT_SECRET || "change-me-in-production";
+const SECRET =
+  process.env.JWT_SECRET ||
+  (process.env.NODE_ENV === "production"
+    ? (() => { throw new Error("JWT_SECRET is required in production"); })()
+    : "dev-only-insecure-secret-do-not-use-in-prod");
 const SCOPE = "finance";
 
 // Short-lived (15 min) scoped token, issued only after bcrypt.compare succeeds
 // on the caller-supplied finance password. Signed with the same JWT_SECRET but
 // scoped so a normal admin JWT can never satisfy the finance gate.
 export function signFinanceToken(sub) {
-  return jwt.sign({ sub, scope: SCOPE }, SECRET, { expiresIn: "15m" });
+  return jwt.sign({ sub, scope: SCOPE }, SECRET, { expiresIn: "15m", algorithm: "HS256" });
 }
 
 // Second-factor middleware. Runs AFTER the normal admin auth on /finance*.
@@ -19,7 +23,7 @@ export function requireFinanceUnlock(req, res, next) {
     return res.status(423).json({ error: "Finance module locked" });
   }
   try {
-    const payload = jwt.verify(token, SECRET);
+    const payload = jwt.verify(token, SECRET, { algorithms: ["HS256"] });
     if (payload.scope !== SCOPE) {
       return res.status(423).json({ error: "Finance module locked" });
     }

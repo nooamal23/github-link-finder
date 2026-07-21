@@ -1,30 +1,9 @@
 import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../db/prisma.js";
+import { publicWriteLimiter } from "../middleware/rate-limit.js";
 
 export const publicRouter = Router();
-
-// ---- Simple in-memory rate limiter for public write endpoints ----
-// Not distributed, not persistent — good enough as basic anti-spam.
-const rateBuckets = new Map(); // key -> [timestamps]
-function rateLimit({ windowMs, max }) {
-  return (req, res, next) => {
-    const key =
-      (req.headers["x-forwarded-for"]?.toString().split(",")[0].trim()) ||
-      req.ip ||
-      "unknown";
-    const now = Date.now();
-    const arr = (rateBuckets.get(key) || []).filter((t) => now - t < windowMs);
-    if (arr.length >= max) {
-      return res
-        .status(429)
-        .json({ error: "طلبات كثيرة جداً، يرجى المحاولة لاحقاً." });
-    }
-    arr.push(now);
-    rateBuckets.set(key, arr);
-    next();
-  };
-}
 
 const PHONE_REGEX = /^(\+?216)?[2345789]\d{7}$/;
 const registrationRequestSchema = z.object({
@@ -39,7 +18,7 @@ const registrationRequestSchema = z.object({
 // POST /api/public/registration-requests — visitor form submission
 publicRouter.post(
   "/registration-requests",
-  rateLimit({ windowMs: 60_000, max: 5 }),
+  publicWriteLimiter,
   async (req, res, next) => {
     try {
       const data = registrationRequestSchema.parse(req.body);
