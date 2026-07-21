@@ -2,6 +2,15 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "../../db/prisma.js";
 
+// ~2 MB image → ~2.75 MB base64 text. Cap slightly above that; anything
+// larger is rejected before hitting the DB.
+const MAX_PHOTO_LEN = 3_000_000;
+const photoField = z
+  .string()
+  .max(MAX_PHOTO_LEN, "photo too large")
+  .optional()
+  .nullable();
+
 const createUserSchema = z.object({
   username: z.string().min(2),
   password: z.string().min(6),
@@ -9,7 +18,7 @@ const createUserSchema = z.object({
   role: z.enum(["admin", "instructor", "student"]),
   phone: z.string().optional().nullable(),
   birthDate: z.string().optional().nullable(),
-  photoUrl: z.string().optional().nullable(),
+  photoUrl: photoField,
 });
 
 const updateUserSchema = z.object({
@@ -19,7 +28,7 @@ const updateUserSchema = z.object({
   isActive: z.boolean().optional(),
   username: z.string().min(2).optional(),
   birthDate: z.string().optional().nullable(),
-  photoUrl: z.string().optional().nullable(),
+  photoUrl: photoField,
 });
 
 export async function list(_req, res, next) {
