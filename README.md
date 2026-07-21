@@ -74,6 +74,27 @@ docker compose restart api
 
 ## النشر على VPS
 
+### قائمة تحقق أمنية قبل النشر (deployment checklist)
+
+**يجب** ضبط هذه القيم قبل تشغيل `docker compose up` — كلها placeholders لا تصلح للإنتاج:
+
+1. `POSTGRES_PASSWORD` — أنشئ ملف `.env` بجانب `docker-compose.yml` يحتوي:
+   ```env
+   POSTGRES_PASSWORD=$(openssl rand -base64 32)
+   ```
+   بدون هذا المتغير، `docker compose up` **سيرفض** الإقلاع (تم فرض ذلك في `docker-compose.yml`).
+2. `backend/.env`:
+   - `JWT_SECRET` — 64 حرفاً عشوائياً (`openssl rand -hex 32`). لا يوجد قيمة افتراضية — الخادم يرفض الإقلاع في `NODE_ENV=production` بدونها.
+   - `DATABASE_URL` — تحديث كلمة السر لتطابق `POSTGRES_PASSWORD` أعلاه.
+   - `CORS_ORIGINS` — النطاق الحقيقي (لا `your-domain.tn` ولا `*`).
+   - `FINANCE_PASSWORD_HASH` — الناتج عن `npm run finance:hash` (انظر أعلاه).
+3. كلمة سر المدير الأولى — تُطبع مرة واحدة عند `npm run seed`؛ سجّلها وبدّلها فوراً بعد أول تسجيل دخول.
+
+### أمن الحاويات (containers)
+
+- الحاويتان `api` و `web` تعملان بمستخدم غير جذري (`USER node`).
+- المنافذ `4000` (api) و `3000` (web) و `5432` (db) مقيدة بـ `127.0.0.1` فقط — لا تعرِّض أياً منها للعموم.
+
 
 
 ```bash
