@@ -1,10 +1,19 @@
 import jwt from "jsonwebtoken";
 
-const SECRET = process.env.JWT_SECRET || "change-me-in-production";
+// No fallback default — server refuses to start in production without
+// JWT_SECRET (see index.js). In dev, use a clearly-marked ephemeral value so
+// missing config is obvious in logs and never mistaken for a real secret.
+const SECRET =
+  process.env.JWT_SECRET ||
+  (process.env.NODE_ENV === "production"
+    ? (() => { throw new Error("JWT_SECRET is required in production"); })()
+    : "dev-only-insecure-secret-do-not-use-in-prod");
+
+const JWT_ALGS = ["HS256"];
 
 export function signToken(payload, opts = {}) {
   // 30-minute expiry — matches frontend inactivity timeout.
-  return jwt.sign(payload, SECRET, { expiresIn: "30m", ...opts });
+  return jwt.sign(payload, SECRET, { expiresIn: "30m", algorithm: "HS256", ...opts });
 }
 
 export function requireAuth(req, res, next) {
@@ -13,7 +22,9 @@ export function requireAuth(req, res, next) {
     return res.status(401).json({ error: "Missing token" });
   }
   try {
-    req.user = jwt.verify(header.slice(7), SECRET);
+    // Explicit algorithm allowlist prevents alg-confusion attacks (e.g. a
+    // token claiming alg:none or HS/RS swap tricks).
+    req.user = jwt.verify(header.slice(7), SECRET, { algorithms: JWT_ALGS });
     next();
   } catch {
     res.status(401).json({ error: "Invalid token" });
