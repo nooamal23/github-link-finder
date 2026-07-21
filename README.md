@@ -95,6 +95,15 @@ docker compose restart api
 - الحاويتان `api` و `web` تعملان بمستخدم غير جذري (`USER node`).
 - المنافذ `4000` (api) و `3000` (web) و `5432` (db) مقيدة بـ `127.0.0.1` فقط — لا تعرِّض أياً منها للعموم.
 
+### تحديث التبعيات
+
+شغّل دورياً:
+```bash
+cd backend && npm audit
+bun audit               # في جذر المشروع
+```
+يُنصح بتفعيل **Dependabot** (`.github/dependabot.yml`) أو **Renovate** بعد رفع المستودع على GitHub لتلقي تنبيهات تحديث الحزم تلقائياً.
+
 
 
 ```bash
