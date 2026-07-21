@@ -19,7 +19,7 @@ export function requireFinanceUnlock(req, res, next) {
     return res.status(423).json({ error: "Finance module locked" });
   }
   try {
-    const payload = jwt.verify(token, SECRET);
+    const payload = jwt.verify(token, SECRET, { algorithms: ["HS256"] });
     if (payload.scope !== SCOPE) {
       return res.status(423).json({ error: "Finance module locked" });
     }
