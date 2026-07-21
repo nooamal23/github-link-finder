@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "../db/prisma.js";
 import { signToken, requireAuth } from "../middleware/auth.js";
+import { loginLimiter } from "../middleware/rate-limit.js";
 
 export const authRouter = Router();
 
@@ -11,7 +12,7 @@ const loginSchema = z.object({
   password: z.string().min(4),
 });
 
-authRouter.post("/login", async (req, res, next) => {
+authRouter.post("/login", loginLimiter, async (req, res, next) => {
   try {
     const { username, password } = loginSchema.parse(req.body);
     const user = await prisma.user.findUnique({ where: { username } });
