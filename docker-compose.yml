@@ -15,7 +15,9 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: app
-      POSTGRES_PASSWORD: app_password
+      # MUST be set in a top-level .env (next to docker-compose.yml) before
+      # deploying. Generate one with: openssl rand -base64 32
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env before running docker compose up}
       POSTGRES_DB: sidi_elhani
     volumes:
       - pgdata:/var/lib/postgresql/data

@@ -17,4 +17,9 @@ ENV NODE_ENV=production
 ENV PORT=4000
 EXPOSE 4000
 
+# Drop root — the base image ships a "node" user (uid 1000) which owns /app
+# after the COPY steps run above.
+RUN chown -R node:node /app
+USER node
+
 CMD ["node", "src/index.js"]

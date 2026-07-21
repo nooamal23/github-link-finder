@@ -18,4 +18,9 @@ ENV NODE_ENV=production
 ENV PORT=3000
 COPY --from=build /app /app
 EXPOSE 3000
+
+# Drop root for the runtime process.
+RUN chown -R node:node /app
+USER node
+
 CMD ["node", ".output/server/index.mjs"]
