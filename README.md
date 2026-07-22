@@ -83,12 +83,17 @@ docker compose restart api
    POSTGRES_PASSWORD=$(openssl rand -base64 32)
    ```
    بدون هذا المتغير، `docker compose up` **سيرفض** الإقلاع (تم فرض ذلك في `docker-compose.yml`).
+   يوجد `.env.example` في جذر المشروع كمرجع — انسخه: `cp .env.example .env` ثم عيّن قيمة قوية.
+   ⚠️ لا تُضِف ملف `.env` هذا إلى git (مُستثنى في `.gitignore`).
 2. `backend/.env`:
    - `JWT_SECRET` — 64 حرفاً عشوائياً (`openssl rand -hex 32`). لا يوجد قيمة افتراضية — الخادم يرفض الإقلاع في `NODE_ENV=production` بدونها.
-   - `DATABASE_URL` — تحديث كلمة السر لتطابق `POSTGRES_PASSWORD` أعلاه.
+   - `DATABASE_URL` — **يجب** أن تطابق كلمة السر فيها `POSTGRES_PASSWORD` في `.env` الجذر بالحرف (وإلا فشل اتصال `api` بـ `db`).
    - `CORS_ORIGINS` — النطاق الحقيقي (لا `your-domain.tn` ولا `*`).
    - `FINANCE_PASSWORD_HASH` — الناتج عن `npm run finance:hash` (انظر أعلاه).
 3. كلمة سر المدير الأولى — تُطبع مرة واحدة عند `npm run seed`؛ سجّلها وبدّلها فوراً بعد أول تسجيل دخول.
+4. `VITE_API_URL` (في `docker-compose.yml`, خدمة `web`, تحت `build.args`) — القيمة المُدمَجة داخل bundle الواجهة وقت البناء ولا يمكن تغييرها لاحقاً بدون إعادة بناء. القيمة الحالية مناسبة للاختبار المحلي فقط. قبل نشر حقيقي:
+   - إما ضعها إلى نطاقك الفعلي (مثال: `https://sidi-elhani.tn/api`)،
+   - أو (الأفضل) اجعلها مساراً نسبياً `"/api"` واجعل Nginx يمرّر `/api` إلى backend — بهذه الطريقة تغيير النطاق مستقبلاً لا يستلزم إعادة بناء الواجهة.
 
 ### أمن الحاويات (containers)
 
@@ -110,10 +115,12 @@ bun audit               # في جذر المشروع
 # على الـ VPS
 git clone <repo> /opt/sidi-elhani
 cd /opt/sidi-elhani
+cp .env.example .env
+nano .env                               # POSTGRES_PASSWORD (قوي، عشوائي)
 cp backend/.env.example backend/.env
-nano backend/.env                       # JWT_SECRET, CORS_ORIGINS, ...
+nano backend/.env                       # JWT_SECRET, CORS_ORIGINS, DATABASE_URL (نفس كلمة السر أعلاه)
 
-# عدّل docker-compose.yml: ضع نطاقك في VITE_API_URL
+# عدّل docker-compose.yml: ضع نطاقك في VITE_API_URL (أو "/api" مع Nginx proxy)
 docker compose up -d --build
 docker compose exec api npm run db:push   # أو: npm run migrate إن استعملت prisma migrate
 docker compose exec api npm run seed
