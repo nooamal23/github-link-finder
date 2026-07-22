@@ -30,3 +30,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment files with secrets (root-level for docker-compose, and backend/.env)
+.env
+backend/.env
