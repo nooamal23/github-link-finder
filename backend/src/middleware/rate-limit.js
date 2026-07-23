@@ -1,11 +1,16 @@
-import rateLimit from "express-rate-limit";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 
 // Shared IP-key resolver — respects the first X-Forwarded-For hop when the API
-// sits behind Nginx (see deploy/nginx.conf.example). Falls back to req.ip.
+// sits behind Nginx (see deploy/nginx.conf.example), then normalizes IPv6
+// addresses via express-rate-limit's helper so low-bit variations cannot evade
+// the rate limit.
 function ipKey(req) {
   const xf = req.headers["x-forwarded-for"];
-  if (typeof xf === "string" && xf.length > 0) return xf.split(",")[0].trim();
-  return req.ip || "unknown";
+  const raw =
+    typeof xf === "string" && xf.length > 0
+      ? xf.split(",")[0].trim()
+      : (req.ip || "unknown");
+  return ipKeyGenerator(raw);
 }
 
 // Strict brute-force guard for POST /api/auth/login.
