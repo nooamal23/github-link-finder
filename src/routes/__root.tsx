@@ -116,18 +116,18 @@ function SiteHeader() {
   const [open, setOpen] = useState(false);
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-      <div className="container-page flex h-20 md:h-24 items-center justify-between gap-4">
-        <Link to="/" className="flex items-center gap-3 md:gap-4">
+      <div className="container-page grid h-16 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:h-20 sm:gap-4 md:h-24 lg:flex lg:justify-between">
+        <Link to="/" className="flex min-w-0 items-center gap-2 sm:gap-3 md:gap-4">
           <img
             src={logoPng}
             alt="شعار الرابطة الوطنية للقرآن الكريم — فرع سيدي الهاني"
-            className="h-14 w-14 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 shrink-0 object-contain"
+            className="h-10 w-10 shrink-0 object-contain sm:h-14 sm:w-14 md:h-20 md:w-20 lg:h-24 lg:w-24"
           />
-          <div className="hidden sm:block leading-tight">
-            <div className="font-display text-base md:text-lg font-bold text-foreground">
+          <div className="min-w-0 leading-tight">
+            <div className="truncate font-display text-sm font-bold text-foreground sm:text-base md:text-lg">
               فرع سيدي الهاني
             </div>
-            <div className="text-[11px] md:text-xs text-muted-foreground">
+            <div className="truncate text-[10px] text-muted-foreground sm:text-[11px] md:text-xs">
               الرابطة الوطنية للقرآن الكريم
             </div>
           </div>
@@ -153,7 +153,7 @@ function SiteHeader() {
 
         <button
           onClick={() => setOpen((v) => !v)}
-          className="lg:hidden rounded-md p-2 text-foreground hover:bg-secondary"
+          className="shrink-0 rounded-md p-2 text-foreground hover:bg-secondary lg:hidden"
           aria-label="القائمة"
         >
           {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
